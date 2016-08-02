@@ -11,7 +11,7 @@ function _mip_common(){
   if [ -n "$2" ]; then
     ip -f $inetfamily -o a s dev $2| _mip_parseipr2 | column -t | awk '{print "\t"$0}'
   else
-    default_iface=$(awk '{ if ($2 == '00000000') {print $1}}' /proc/net/route | head -n 1)
+    default_iface=$(awk '{ if ($2 == '00000000') {print $1; exit}}' /proc/net/route)
     inetfamily="$1"
     netns_list=$(ip -o  netns list 2>/dev/null)
     if [ -n "$netns_list" ]; then
