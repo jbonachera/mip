@@ -1,4 +1,4 @@
-#!/bin/bash 
+#!/bin/bash
 
 function _mip_parseipr2(){
   if [ -n "$1" ]; then
@@ -13,21 +13,16 @@ function _mip_common(){
   else
     default_iface=$(awk '{ if ($2 == "00000000") {print $1; exit}}' /proc/net/route)
     inetfamily="$1"
-    netns_list=$(ip -o  netns list 2>/dev/null)
-    if [ -n "$netns_list" ]; then
-      for netns in $netns_list; do
-        echo "NS: $netns"
-        if [ "$UID" != "0" ]; then
-          echo -e "\t(Reading NS informations requires root access)"
-        else
-          ip netns exec "$netns" ip -f "$inetfamily" -o a| _mip_parseipr2 | column -t | awk '{print "\t"$0}'
-          echo
-        fi
+    if [ "$UID" -eq "0" ]; then
+        lsns -t net -n -uo NS,PID 2>/dev/null | while read id netns; do
+        echo "NS: $id (pid $netns)"
+        nsenter -t "$netns" -n ip -f "$inetfamily" -o a| _mip_parseipr2 | column -t | awk '{print "\t"$0}'
+        echo
       done
     fi
-    echo "NS: Current"
-    ip -f "$inetfamily" -o a| _mip_parseipr2 "$default_iface"| column -t | awk '{print "\t"$0}'
   fi
+  echo "NS: Current"
+  ip -f "$inetfamily" -o a| _mip_parseipr2 "$default_iface"| column -t | awk '{print "\t"$0}'
 
 }
 function mip6(){
@@ -36,5 +31,4 @@ function mip6(){
 function mip(){
   _mip_common inet "$@"
 }
-
 
